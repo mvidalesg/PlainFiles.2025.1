@@ -34,6 +34,22 @@ do
             }
             break;
         case "3":
+            Console.Write("Enter the line to update: ");
+            var lineToUpdate = Console.ReadLine();
+            Console.Write("Enter the new value: ");
+            var newValue = Console.ReadLine();
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (lines[i] == lineToUpdate)
+                {
+                    lines[i] = newValue!;
+                   
+                    break;
+                }
+
+            }
+            break;
+        case "4":
             Console.Write("Enter the line to remove: ");
             var lineToRemove = Console.ReadLine();
             if (!string.IsNullOrEmpty(lineToRemove))
@@ -42,7 +58,7 @@ do
             }
             break;
 
-        case "4":
+        case "5":
             SaveChanges();
             break;
         case "0":
@@ -68,8 +84,9 @@ string Menu()
     Console.WriteLine("=======================================");
     Console.WriteLine("1. Show content");
     Console.WriteLine("2. Add line");
-    Console.WriteLine("3. Remove line");
-    Console.WriteLine("4. save Changes");
+    Console.WriteLine("3. Update line");
+    Console.WriteLine("4. Remove line");
+    Console.WriteLine("5. save Changes");
     Console.WriteLine("0. Exit");
     Console.Write("Enter your option: ");
     return Console.ReadLine() ?? "0";
