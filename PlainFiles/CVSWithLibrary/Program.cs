@@ -1,12 +1,13 @@
-﻿
-using CVSWithLibrary; 
+﻿// Program.cs
+using CVSWithLibrary;
 using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Text.RegularExpressions;
-using System.Globalization; // Required for IsValidPhoneNumber
+using System.Globalization; // Required for CultureInfo.CurrentCulture.TextInfo.ToTitleCase
 
-
+// --- GLOBAL CONFIGURATION ---
+// User file handler instance
 var userHandler = new UserFileHandler();
 const string usersFilePath = "Users.txt";
 // List of users loaded from file (or created if it doesn't exist)
@@ -118,8 +119,9 @@ do
         case "6": // Delete Person
             DeletePerson();
             break;
-        case "7": // Generate City Balance Report
-            GenerateCityBalanceReport();
+        // Case 7 for GenerateCityBalanceReport (Summary) has been removed
+        case "8": // Generate Detailed City Balance Report
+            GenerateDetailedCityBalanceReport();
             break;
         case "0":
             Console.WriteLine("Exiting program. Goodbye!");
@@ -135,6 +137,7 @@ do
 } while (option != "0");
 
 
+// --- GLOBAL HELPER METHODS ---
 
 // Method to display the main menu
 string MainMenu()
@@ -148,7 +151,8 @@ string MainMenu()
     Console.WriteLine("4. Add Person");
     Console.WriteLine("5. Edit Person");
     Console.WriteLine("6. Delete Person");
-    Console.WriteLine("7. Generate City Balance Report"); 
+    // Option 7 for Generate City Balance Report (Summary) has been removed
+    Console.WriteLine("8. Generate Detailed City Balance Report"); // Only the detailed report remains
     Console.WriteLine("0. Exit");
     Console.Write("Choose an option: ");
     return Console.ReadLine() ?? "0";
@@ -210,6 +214,7 @@ void UnlockUser(string? username, string executedByUsername)
 }
 
 
+// --- PERSON MANAGEMENT METHODS ---
 
 // Method to display all people
 void ShowPeople()
@@ -443,7 +448,7 @@ void DeletePerson()
     {
         people.Remove(personToDelete);
         personHelper.write(people); // Save changes
-        Console.WriteLine($"Person with ID {idToDelete} deleted successfully.");
+        Console.WriteLine($"Persona con ID {idToDelete} deleted successfully.");
         Logger.Log($"Person with ID {idToDelete} deleted by '{loggedInUser.Username}'.", loggedInUser.Username);
     }
     else
@@ -453,44 +458,57 @@ void DeletePerson()
     }
 }
 
-// --- METHOD TO GENERATE CITY BALANCE REPORT ---
+// The old GenerateCityBalanceReport (Summary) method has been removed.
+// It was previously here:
+// void GenerateCityBalanceReport() { /* ... */ }
 
-void GenerateCityBalanceReport()
+
+// --- NEW METHOD: GENERATE DETAILED CITY BALANCE REPORT ---
+void GenerateDetailedCityBalanceReport()
 {
-    Console.WriteLine("\n--- City Balance Report ---");
+    Console.WriteLine("\n--- Detailed City Balance Report ---");
 
     if (!people.Any())
     {
-        Console.WriteLine("No registered people to generate the report.");
-        Logger.Log($"Attempt to generate city balance report. (Empty person list)", loggedInUser.Username);
+        Console.WriteLine("No registered people to generate the detailed report.");
+        Logger.Log($"Attempt to generate detailed city balance report. (Empty person list)", loggedInUser.Username);
         return;
     }
 
-    // Group people by city and calculate the total balance for each city
-    var cityBalances = people
-        .GroupBy(p => p.City.Trim().ToLower()) // Group by normalized city name for consistency
-        .Select(group => new // Create a new anonymous object for the result
-        {
-            City = group.Key, // The city is the group key (now normalized)
-            TotalBalance = group.Sum(p => p.Balance) // Sum the balances of all people in that city
-        })
-        .OrderBy(cb => cb.City) // Optional: Order results by city name
+    // Group people by city, ensuring consistent grouping
+    var peopleByCity = people
+        .GroupBy(p => p.City.Trim().ToLower()) // Group by normalized city name
+        .OrderBy(group => group.Key) // Order cities alphabetically
         .ToList();
 
     decimal grandTotalBalance = 0;
 
-    Console.WriteLine("\nBALANCE BY CITY:");
-    Console.WriteLine("------------------------------------------");
-    foreach (var cityBalance in cityBalances)
+    foreach (var cityGroup in peopleByCity)
     {
-        // Capitalize the first letter of the city name for display
-        string displayCity = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cityBalance.City);
-        Console.WriteLine($"{displayCity,-25}: {cityBalance.TotalBalance,10:C2}"); // Currency format
-        grandTotalBalance += cityBalance.TotalBalance;
-    }
-    Console.WriteLine("------------------------------------------");
-    Console.WriteLine($"GRAND TOTAL BALANCE: {grandTotalBalance,10:C2}"); // Currency format
-    Console.WriteLine("------------------------------------------");
+        // Display city header, capitalizing the first letter
+        string displayCityName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(cityGroup.Key);
+        Console.WriteLine($"\nCiudad: {displayCityName}");
+        
+        Console.WriteLine("ID       Nombres           Apellidos           Saldo");
+        Console.WriteLine("------- ----------------- ----------------- --------------");
 
-    Logger.Log($"City balance report generated by '{loggedInUser.Username}'. Grand total: {grandTotalBalance:C2}", loggedInUser.Username);
+        decimal citySubtotal = 0;
+        foreach (var person in cityGroup.OrderBy(p => p.LastName).ThenBy(p => p.FirstName)) // Order persons within city
+        {
+            // Note: Phone number is not included as per your requested format for this report
+            Console.WriteLine($"{person.Id,-7} {person.FirstName,-17} {person.LastName,-17} {person.Balance,10:C2}");
+            citySubtotal += person.Balance;
+        }
+        Console.WriteLine("                                            ==============");
+        Console.WriteLine($"Total: {displayCityName,-39} {citySubtotal,10:C2}");
+        
+
+        grandTotalBalance += citySubtotal;
+    }
+
+    Console.WriteLine("\n===============================================================");
+    Console.WriteLine($"Total General: {grandTotalBalance,43:C2}"); // Align with city totals
+    Console.WriteLine("===============================================================");
+
+    Logger.Log($"Detailed city balance report generated by '{loggedInUser.Username}'. Grand total: {grandTotalBalance:C2}", loggedInUser.Username);
 }
