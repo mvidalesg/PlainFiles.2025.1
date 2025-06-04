@@ -1,13 +1,12 @@
-﻿// Program.cs
+﻿
 using CVSWithLibrary;
 using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Text.RegularExpressions;
-using System.Globalization; // Required for CultureInfo.CurrentCulture.TextInfo.ToTitleCase
+using System.Globalization; 
 
-// --- GLOBAL CONFIGURATION ---
-// User file handler instance
+
 var userHandler = new UserFileHandler();
 const string usersFilePath = "Users.txt";
 // List of users loaded from file (or created if it doesn't exist)
